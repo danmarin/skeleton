@@ -30,7 +30,7 @@ class AdminController {
 	 * We need to instantiate values so we can use them
 	 */
 	public function __construct() {
-		$this->title  = 'CometGrid Administration Panel';
+		$this->title  = 'Administration Panel';
 		$this->config = new Config();
 
 		$this->url = $this->config->getUrls();
