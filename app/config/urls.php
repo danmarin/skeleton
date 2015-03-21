@@ -1,6 +1,6 @@
 <?php
 // Setting up the domain name
-$domain = 'http://spiral8.dev';
+$domain = 'http://skeleton.dev';
 
 return array(
 	'urls' => array(
