@@ -43,7 +43,7 @@ class MainController {
 		if (isset($_SESSION['users_is_active']) && $_SESSION['users_is_active'] == 0) {
 			$this->auth->deleteSessions('users');
 			require $this->config->get('errors_template') . '/disabled.php';
-			exit;
+			return false;
 		}
 	}
 
