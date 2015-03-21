@@ -1,0 +1,9 @@
+I WANT TO LOGIN TO MY ACCOUNT
+
+I am 'guest'
+I am on page '/login'
+I fill field 'email'," 'dan@spiral8.net'
+I fill field 'password'," '12341234'
+I click 'Login'
+I am on page '/dashboard'
+I see 'Logout'

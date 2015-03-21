@@ -1,0 +1,9 @@
+<?php
+
+class {classname} extends BaseController {
+
+    public function index() {
+
+    }
+
+}

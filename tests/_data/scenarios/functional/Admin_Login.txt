@@ -1,0 +1,9 @@
+I WANT TO LOGIN TO MY ADMINISTRATOR ACCOUNT
+
+I am 'guest'
+I am on page '/manage/login'
+I fill field 'email'," 'dan@spiral8.net'
+I fill field 'password'," '12341234'
+I click 'Login'
+I am on page '/manage/dashboard'
+I see 'Logout'

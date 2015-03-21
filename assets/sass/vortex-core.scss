@@ -1,0 +1,26 @@
+.login-bg {
+  background-color:  #F5F5F5;;
+}
+
+.login-container {
+  padding: 20px;
+  background-color: #ffffff;
+  border: 1px solid #55ADDC;
+}
+
+.btn-primary {
+  border-radius: 0;
+  width: 100%;
+  text-align: left;
+  background-color: #55ADDC;
+  padding:10px;
+}
+
+input.normal {
+  padding: 20px;
+ border-radius: 0;
+}
+
+input.btn-primary:hover {
+  background-color: #0088CC;
+}

@@ -1,0 +1,10 @@
+I WANT TO SIGNUP FOR AN ACCOUNT
+
+I am 'guest'
+I am on page '/signup'
+I fill field 'email'," 'tester@test.com'
+I fill field 'password'," '12341234'
+I fill field 'confirm_password'," '12341234'
+I click 'Create'
+I see 'Account created!'
+I see in database('users', array 'email' => 'tester@test.com')"

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Register an account</title>
+	<link rel="stylesheet" href="http://spiral8.dev/assets/css/bootstrap.min.css"/>
+	<link rel="stylesheet" href="http://spiral8.dev/assets/css/font-awesome.min.css"/>
+	<link rel="stylesheet" href="http://spiral8.dev/assets/css/vortex-core.css"/>
+	<link rel="stylesheet" href="http://spiral8.dev/assets/css/style.css"/>
+	<link rel="shortcut icon" href="http://spiral8.dev/assets/images/favicon.png">
+</head>
+<body class="login-bg">
+<div class="container">
+	<div class="row">
+		<h1 align="center"><a href="http://spiral8.dev"><img src="http://spiral8.dev/assets/images/logo.png" width="300"/></a></h1>
+		<div class="col-md-4"></div>
+		<div class="col-md-4 login-container">
+			<h3 align="center">Create your account</h3>
+			<div class="alert alert-danger">Email already exists</div>			<form action="" method="post" enctype="application/x-www-form-urlencoded" id="signup">
+				<input type="hidden" name="token" value="80f9d041ab113e5353470203efdf8d4cf07415f6">
+				<div class="form-group">
+					<label for="email">Email</label>
+					<input type="email" name="email" id="email" class="form-control normal" placeholder="Enter your email" value="test@test.com"/>
+				</div>
+				<div class="form-group">
+					<label for="password">Password</label>
+					<input type="password" name="password" id="password" class="form-control normal" placeholder="Enter your password"/>
+				</div>
+				<div class="form-group">
+					<label for="confirmPassword">Confirm Password</label>
+					<input type="password" name="confirm_password" id="confirmPassword" class="form-control normal" placeholder="Confirm your password"/>
+				</div>
+				<div class="form-group">
+					<button class="btn btn-primary" name="submit"><i class="fa fa-user-plus" style="margin-right:10px;"></i> Sign Up</button>
+				</div>
+			</form>
+		</div>
+		<div class="col-md-4"></div>
+	</div>
+</div>
+
+<script src="http://spiral8.dev/assets/js/jquery-2.1.3.min.js"></script>
+<script src="http://spiral8.dev/assets/js/bootstrap.min.js"></script>
+
+</body>
+</html>

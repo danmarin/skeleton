@@ -1,0 +1,31 @@
+<IfModule mod_rewrite.c>
+	RewriteEngine On
+	# Redirect Trailing Slashes
+	RewriteRule ^(.*)/$ /$1 [L,R=301]
+
+	# Handle Front Controller...
+	RewriteCond %{REQUEST_FILENAME} !-d
+	RewriteCond %{REQUEST_FILENAME} !-f
+
+	# Rules for routes file
+	# The rules are made based on a switch case routing file
+	# The focus is based on speed since parsing url takes more time
+
+	# Main rule
+	RewriteRule ^([a-z0-9-]+)$ index.php?do=$1 [QSA,L]
+
+	# Rules including pages
+	RewriteRule ^([a-z0-9-]+)/page/([0-9]+)$ index.php?do=$1&page=$2 [QSA,L]
+	RewriteRule ^([a-z0-9-]+)/([a-z0-9-]+)/page/([0-9]+)$ index.php?do=$1&action=$2&page=$3 [QSA,L]
+
+	# Rules for a simple post
+	RewriteRule ^([a-z0-9-]+)/([a-z0-9-]+)-([0-9]+)$ index.php?do=$1&slug=$2&id=$3 [QSA,L]
+
+	RewriteRule ^([a-z0-9-]+)/([a-z0-9-]+)/([0-9]+)$ index.php?do=$1&action=$2&id=$3 [QSA,L]
+	RewriteRule ^([a-z0-9-]+)/([a-z0-9-]+)$ index.php?do=$1&action=$2 [QSA,L]
+
+    RewriteRule ^([a-z0-9-]+)/([a-z0-9-]+)/([a-z0-9-]+)$ index.php?do=$1&action=$2&type=$3 [QSA,L]
+	RewriteRule ^([a-z0-9-]+)/([a-z0-9-]+)/([a-z0-9-]+)/([0-9]+)$ index.php?do=$1&action=$2&type=$3&id=4 [QSA,L]
+</IfModule>
+
+ErrorDocument 404 /index.php?do=404
