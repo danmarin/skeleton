@@ -34,12 +34,12 @@ class GenerateControllerCommand extends Command {
 
 		if(file_exists($ctrlFile)) {
 			$output->writeln('<bg=red>A controller with this name: '.$ctrlFile.'already exists</bg=red>');
-			exit;
+			return false;
 		}
 
 		if(file_exists($modelFile)) {
 			$output->writeln('<bg=red>A Model with this name: '.$name.'.php already exists</bg=red>');
-			exit;
+			return false;
 		}
 
 		file_put_contents($ctrlFile, $ctrlTemp);
