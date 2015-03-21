@@ -10,3 +10,6 @@ Server DocumentRoot needs to be set to /your_path/www/domain/public
 Changes can be done directly in public/index.php
 
 app/sessions needs to be chmoded to 777
+
+### Console
+You can run commands using php console.php to export database and to generate controller / model / console command (Only basic stuff)
