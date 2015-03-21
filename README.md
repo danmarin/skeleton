@@ -1,5 +1,7 @@
 # Vortex Framework v0.1
 
+[![SensioLabsInsight](https://insight.sensiolabs.com/projects/cb0b6717-b60e-4c9b-a483-8d2c2dd66034/big.png)](https://insight.sensiolabs.com/projects/cb0b6717-b60e-4c9b-a483-8d2c2dd66034)
+
 A basic PHP Framework.
 
 This framework already comes with with a routes.php file (simplified) located in app/routes.php
