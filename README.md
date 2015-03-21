@@ -1,3 +1,12 @@
 # Vortex Framework v0.1
 
-A simple framework where you can build on top of it.
+A basic PHP Framework.
+
+This framework already comes with with a routes.php file (simplified) located in app/routes.php
+There is nothing advanced in this framework only basic needs to start developing your web app/
+
+Server DocumentRoot needs to be set to /your_path/www/domain/public
+
+Changes can be done directly in public/index.php
+
+app/sessions needs to be chmoded to 777
