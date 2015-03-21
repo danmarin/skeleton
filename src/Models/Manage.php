@@ -201,7 +201,7 @@ class Manage extends DB {
 
 		$sql = "UPDATE $this->table SET `username`='{$array['username']}', `email`='{$array['email']}', `first_name`='{$array['first_name']}', `last_name`='{$array['last_name']}', `updated_at`=NOW() WHERE `id`='$id'";
 
-		if($newPassword == true) {
+		if($newPassword === true) {
 			$sql = "UPDATE $this->table SET `username`='{$array['username']}', `email`='{$array['email']}', `password`='$password' ,`first_name`='{$array['first_name']}', `last_name`='{$array['last_name']}', `updated_at`=NOW() WHERE `id`='$id'";
 		}
 		if($this->link->query($sql)) {

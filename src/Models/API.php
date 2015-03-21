@@ -20,11 +20,11 @@ class API extends DB {
 	}
 
 	public function getKey() {
-
+		return $this->key;
 	}
 
 	public function getToken() {
-
+		return $this->token;
 	}
 
 	public function isValid($key, $token) {

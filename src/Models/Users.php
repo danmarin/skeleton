@@ -18,7 +18,7 @@ class Users extends DB {
 
 		$sql = "INSERT INTO {$this->table}(`email`, `password`, `is_active`, `created_at`, `updated_at`) VALUES ( '{$this->fields['email']}', '{$this->password}', TRUE, NOW(), NOW())";
 
-		if($username == true) {
+		if($username === true) {
 			$sql = "INSERT INTO {$this->table}(`username`, `email`, `password`, `is_active`, `created_at`, `updated_at`) VALUES ('{$this->fields['username']}', '{$this->fields['email']}', '{$this->password}', TRUE, NOW(), NOW())";
 		}
 

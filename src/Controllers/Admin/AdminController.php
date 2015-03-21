@@ -20,7 +20,6 @@ class AdminController {
 
 	private $adminTable = 'admins';
 	private $adminTemplate = 'admin_template';
-	private $adminUrl = 'admin_url';
 
 	private $tokenName = 'token';
 
