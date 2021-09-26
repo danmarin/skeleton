@@ -3,6 +3,11 @@ namespace Codeception\Lib\Actor\Shared;
 
 trait Comment
 {
+    /**
+     * @return \Codeception\Scenario
+     */
+    abstract protected function getScenario();
+
     public function expectTo($prediction)
     {
         return $this->comment('I expect to ' . $prediction);
@@ -18,7 +23,14 @@ trait Comment
         return $this->comment('I am going to ' . $argumentation);
     }
 
-    public function am($role) {
+    public function am($role)
+    {
+        $role = trim($role);
+
+        if (stripos('aeiou', $role[0]) !== false) {
+            return $this->comment('As an ' . $role);
+        }
+
         return $this->comment('As a ' . $role);
     }
 
@@ -29,7 +41,7 @@ trait Comment
 
     public function comment($description)
     {
-        $this->scenario->comment($description);
+        $this->getScenario()->comment($description);
         return $this;
     }
 }

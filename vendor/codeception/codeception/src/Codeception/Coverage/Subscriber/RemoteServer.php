@@ -2,7 +2,6 @@
 namespace Codeception\Coverage\Subscriber;
 
 use Codeception\Configuration;
-use Codeception\Coverage\Shared\C3Collect;
 use Codeception\Event\SuiteEvent;
 use Codeception\Util\FileSystem;
 
@@ -17,7 +16,7 @@ class RemoteServer extends LocalServer
 {
     public function isEnabled()
     {
-        return $this->getServerConnectionModule() and $this->settings['remote'] and $this->settings['enabled'];
+        return $this->module and $this->settings['remote'] and $this->settings['enabled'];
     }
 
     public function afterSuite(SuiteEvent $e)
@@ -26,18 +25,27 @@ class RemoteServer extends LocalServer
             return;
         }
 
-        $suite = $e->getSuite()->getName();
+        $suite = strtr($e->getSuite()->getName(), ['\\' => '.']);
         if ($this->options['coverage-xml']) {
             $this->retrieveAndPrintXml($suite);
         }
         if ($this->options['coverage-html']) {
             $this->retrieveAndPrintHtml($suite);
         }
+        if ($this->options['coverage-crap4j']) {
+            $this->retrieveAndPrintCrap4j($suite);
+        }
+        if ($this->options['coverage-cobertura']) {
+            $this->retrieveAndPrintCobertura($suite);
+        }
+        if ($this->options['coverage-phpunit']) {
+            $this->retrieveAndPrintPHPUnit($suite);
+        }
     }
 
     protected function retrieveAndPrintHtml($suite)
     {
-        $tempFile = str_replace('.', '', tempnam(sys_get_temp_dir(), 'C3')) . '.tar';
+        $tempFile = tempnam(sys_get_temp_dir(), 'C3') . '.tar';
         file_put_contents($tempFile, $this->c3Request('html'));
 
         $destDir = Configuration::outputDir() . $suite . '.remote.coverage';
@@ -59,4 +67,33 @@ class RemoteServer extends LocalServer
         file_put_contents($destFile, $this->c3Request('clover'));
     }
 
+    protected function retrieveAndPrintCrap4j($suite)
+    {
+        $destFile = Configuration::outputDir() . $suite . '.remote.crap4j.xml';
+        file_put_contents($destFile, $this->c3Request('crap4j'));
+    }
+
+    protected function retrieveAndPrintCobertura($suite)
+    {
+        $destFile = Configuration::outputDir() . $suite . '.remote.cobertura.xml';
+        file_put_contents($destFile, $this->c3Request('cobertura'));
+    }
+
+    protected function retrieveAndPrintPHPUnit($suite)
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'C3') . '.tar';
+        file_put_contents($tempFile, $this->c3Request('phpunit'));
+
+        $destDir = Configuration::outputDir() . $suite . '.remote.coverage-phpunit';
+        if (is_dir($destDir)) {
+            FileSystem::doEmptyDir($destDir);
+        } else {
+            mkdir($destDir, 0777, true);
+        }
+
+        $phar = new \PharData($tempFile);
+        $phar->extractTo($destDir);
+
+        unlink($tempFile);
+    }
 }

@@ -2,27 +2,29 @@
 namespace Codeception\Util;
 
 /**
- * That's a pretty simple yet powerful class to build XML structures in jQuery-like style. With no XML line actually written!
+ * That's a pretty simple yet powerful class to build XML structures in jQuery-like style.
+ * With no XML line actually written!
  * Uses DOM extension to manipulate XML data.
+ *
  *
  * ```php
  * <?php
  * $xml = new \Codeception\Util\XmlBuilder();
  * $xml->users
- * 	->user
- * 		->val(1)
- * 		->email
- * 			->val('davert@mail.ua')
- * 			->attr('valid','true')
- * 			->parent()
- * 		->cart
- * 			->attr('empty','false')
- * 			->items
- * 				->item
- * 					->val('useful item');
- * 				->parents('user')
- * 		->active
- * 			->val(1);
+ *    ->user
+ *        ->val(1)
+ *        ->email
+ *            ->val('davert@mail.ua')
+ *            ->attr('valid','true')
+ *            ->parent()
+ *        ->cart
+ *            ->attr('empty','false')
+ *            ->items
+ *                ->item
+ *                    ->val('useful item');
+ *                ->parents('user')
+ *        ->active
+ *            ->val(1);
  * echo $xml;
  * ```
  *
@@ -31,22 +33,23 @@ namespace Codeception\Util;
  * ```xml
  * <?xml version="1.0"?>
  * <users>
- * 	<user>
- * 		1
- * 		<email valid="true">davert@mail.ua</email>
- * 		<cart empty="false">
- * 			<items>
- * 				<item>useful item</item>
- * 			</items>
- * 		</cart>
- * 		<active>1</active>
- * 	</user>
+ *    <user>
+ *        1
+ *        <email valid="true">davert@mail.ua</email>
+ *        <cart empty="false">
+ *            <items>
+ *                <item>useful item</item>
+ *            </items>
+ *        </cart>
+ *        <active>1</active>
+ *    </user>
  * </users>
  * ```
  *
  * ### Usage
  *
- * Builder uses chained calls. So each call to builder returns a builder object. Except for `getDom` and `__toString` methods.
+ * Builder uses chained calls. So each call to builder returns a builder object.
+ * Except for `getDom` and `__toString` methods.
  *
  *  * `$xml->node` - create new xml node and go inside of it.
  *  * `$xml->node->val('value')` - sets the inner value of node
@@ -59,7 +62,7 @@ namespace Codeception\Util;
  *  * `$xml->getDom` - get a DOMDocument object
  *  * `$xml->__toString` - get a string representation of XML.
  *
- * [Source code](https://github.com/Codeception/Codeception/blob/master/src/Codeception/Util/XmlBuilder.php)
+ * [Source code](https://github.com/Codeception/Codeception/blob/4.0/src/Codeception/Util/XmlBuilder.php)
  */
 class XmlBuilder
 {
@@ -76,7 +79,7 @@ class XmlBuilder
 
     public function __construct()
     {
-        $this->__dom__         = new \DOMDocument();
+        $this->__dom__ = new \DOMDocument();
         $this->__currentNode__ = $this->__dom__;
     }
 
@@ -142,12 +145,12 @@ class XmlBuilder
     public function parents($tag)
     {
         $traverseNode = $this->__currentNode__;
-        $elFound      = false;
+        $elFound = false;
         while ($traverseNode->parentNode) {
             $traverseNode = $traverseNode->parentNode;
             if ($traverseNode->tagName == $tag) {
                 $this->__currentNode__ = $traverseNode;
-                $elFound               = true;
+                $elFound = true;
                 break;
             }
         }

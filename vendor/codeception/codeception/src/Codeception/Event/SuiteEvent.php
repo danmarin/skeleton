@@ -1,18 +1,18 @@
 <?php
-
 namespace Codeception\Event;
 
+use Codeception\Suite;
 use Symfony\Component\EventDispatcher\Event;
 
 class SuiteEvent extends Event
 {
     /**
-     * @var \PHPUnit_Framework_TestSuite
+     * @var \PHPUnit\Framework\TestSuite
      */
     protected $suite;
 
     /**
-     * @var \PHPUnit_Framework_TestResult
+     * @var \PHPUnit\Framework\TestResult
      */
     protected $result;
 
@@ -22,17 +22,17 @@ class SuiteEvent extends Event
     protected $settings;
 
     public function __construct(
-        \PHPUnit_Framework_TestSuite $suite,
-        \PHPUnit_Framework_TestResult $result = null,
-        $settings = array()
+        \PHPUnit\Framework\TestSuite $suite,
+        \PHPUnit\Framework\TestResult $result = null,
+        $settings = []
     ) {
-        $this->suite    = $suite;
-        $this->result   = $result;
+        $this->suite = $suite;
+        $this->result = $result;
         $this->settings = $settings;
     }
 
     /**
-     * @return \PHPUnit_Framework_TestSuite
+     * @return Suite
      */
     public function getSuite()
     {
@@ -40,7 +40,7 @@ class SuiteEvent extends Event
     }
 
     /**
-     * @return \PHPUnit_Framework_TestResult
+     * @return \PHPUnit\Framework\TestResult
      */
     public function getResult()
     {

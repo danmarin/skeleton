@@ -24,7 +24,7 @@ class Maybe implements \ArrayAccess, \Iterator, \JsonSerializable
     protected $val = null;
     protected $assocArray = null;
 
-    function __construct($val = null)
+    public function __construct($val = null)
     {
         $this->val = $val;
         if (is_array($this->val)) {
@@ -38,7 +38,7 @@ class Maybe implements \ArrayAccess, \Iterator, \JsonSerializable
         return array_keys($arr) !== range(0, count($arr) - 1);
     }
 
-    function __toString()
+    public function __toString()
     {
         if ($this->val === null) {
             return "?";
@@ -54,7 +54,7 @@ class Maybe implements \ArrayAccess, \Iterator, \JsonSerializable
         return $this->val;
     }
 
-    function __get($key)
+    public function __get($key)
     {
         if ($this->val === null) {
             return new Maybe();
@@ -69,7 +69,7 @@ class Maybe implements \ArrayAccess, \Iterator, \JsonSerializable
         return $this->val->key;
     }
 
-    function __set($key, $val)
+    public function __set($key, $val)
     {
         if ($this->val === null) {
             return;
@@ -83,15 +83,15 @@ class Maybe implements \ArrayAccess, \Iterator, \JsonSerializable
         $this->val->key = $val;
     }
 
-    function __call($method, $args)
+    public function __call($method, $args)
     {
         if ($this->val === null) {
             return new Maybe();
         }
-        return call_user_func_array(array($this->val, $method), $args);
+        return call_user_func_array([$this->val, $method], $args);
     }
 
-    function __clone()
+    public function __clone()
     {
         if (is_object($this->val)) {
             $this->val = clone $this->val;
@@ -110,7 +110,7 @@ class Maybe implements \ArrayAccess, \Iterator, \JsonSerializable
 
     public function offsetExists($offset)
     {
-        if (is_array($this->val) or ($this->val instanceof \ArrayAccess)) {
+        if (is_array($this->val) || ($this->val instanceof \ArrayAccess)) {
             return isset($this->val[$offset]);
         }
         return false;
@@ -118,7 +118,7 @@ class Maybe implements \ArrayAccess, \Iterator, \JsonSerializable
 
     public function offsetGet($offset)
     {
-        if (is_array($this->val) or ($this->val instanceof \ArrayAccess)) {
+        if (is_array($this->val) || ($this->val instanceof \ArrayAccess)) {
             return $this->val[$offset];
         }
         return new Maybe();
@@ -126,14 +126,14 @@ class Maybe implements \ArrayAccess, \Iterator, \JsonSerializable
 
     public function offsetSet($offset, $value)
     {
-        if (is_array($this->val) or ($this->val instanceof \ArrayAccess)) {
+        if (is_array($this->val) || ($this->val instanceof \ArrayAccess)) {
             $this->val[$offset] = $value;
         }
     }
 
     public function offsetUnset($offset)
     {
-        if (is_array($this->val) or ($this->val instanceof \ArrayAccess)) {
+        if (is_array($this->val) || ($this->val instanceof \ArrayAccess)) {
             unset($this->val[$offset]);
         }
     }
@@ -160,15 +160,15 @@ class Maybe implements \ArrayAccess, \Iterator, \JsonSerializable
      */
     public function current()
     {
-        if (! is_array($this->val)) {
+        if (!is_array($this->val)) {
             return null;
         }
         if ($this->assocArray) {
             $keys = array_keys($this->val);
             return $this->val[$keys[$this->position]];
-        } else {
-            return $this->val[$this->position];
         }
+
+        return $this->val[$this->position];
     }
 
     /**
@@ -193,9 +193,9 @@ class Maybe implements \ArrayAccess, \Iterator, \JsonSerializable
         if ($this->assocArray) {
             $keys = array_keys($this->val);
             return $keys[$this->position];
-        } else {
-            return $this->position;
         }
+
+        return $this->position;
     }
 
     /**
@@ -207,15 +207,15 @@ class Maybe implements \ArrayAccess, \Iterator, \JsonSerializable
      */
     public function valid()
     {
-        if (! is_array($this->val)) {
+        if (!is_array($this->val)) {
             return null;
         }
         if ($this->assocArray) {
             $keys = array_keys($this->val);
             return isset($keys[$this->position]);
-        } else {
-            return isset($this->val[$this->position]);
         }
+
+        return isset($this->val[$this->position]);
     }
 
     /**

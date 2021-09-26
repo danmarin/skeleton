@@ -1,21 +1,20 @@
 <?php
-
 namespace Codeception\Subscriber;
 
-use Codeception\Events;
 use Codeception\Event\FailEvent;
 use Codeception\Event\StepEvent;
 use Codeception\Event\SuiteEvent;
 use Codeception\Event\TestEvent;
-use Codeception\SuiteManager;
-use Codeception\TestCase;
+use Codeception\Events;
+use Codeception\Suite;
+use Codeception\TestInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class Module implements EventSubscriberInterface
 {
     use Shared\StaticEvents;
 
-    static $events = [
+    public static $events = [
         Events::TEST_BEFORE  => 'before',
         Events::TEST_AFTER   => 'after',
         Events::STEP_BEFORE  => 'beforeStep',
@@ -26,65 +25,70 @@ class Module implements EventSubscriberInterface
         Events::SUITE_AFTER  => 'afterSuite'
     ];
 
+    protected $modules = [];
+
     public function beforeSuite(SuiteEvent $e)
     {
-        foreach (SuiteManager::$modules as $module) {
+        $suite = $e->getSuite();
+        if (!$suite instanceof Suite) {
+            return;
+        }
+        $this->modules = $suite->getModules();
+        foreach ($this->modules as $module) {
             $module->_beforeSuite($e->getSettings());
         }
     }
 
     public function afterSuite()
     {
-        foreach (SuiteManager::$modules as $module) {
+        foreach ($this->modules as $module) {
             $module->_afterSuite();
         }
     }
 
     public function before(TestEvent $event)
     {
-        if (!$event->getTest() instanceof TestCase) {
+        if (!$event->getTest() instanceof TestInterface) {
             return;
         }
 
-        foreach (SuiteManager::$modules as $module) {
-            $module->_cleanup();
-            $module->_resetConfig();
+        foreach ($this->modules as $module) {
             $module->_before($event->getTest());
         }
     }
 
     public function after(TestEvent $e)
     {
-        if (!$e->getTest() instanceof TestCase) {
+        if (!$e->getTest() instanceof TestInterface) {
             return;
         }
-        foreach (SuiteManager::$modules as $module) {
+        foreach ($this->modules as $module) {
             $module->_after($e->getTest());
+            $module->_resetConfig();
         }
     }
 
     public function failed(FailEvent $e)
     {
-        if (!$e->getTest() instanceof TestCase) {
+        if (!$e->getTest() instanceof TestInterface) {
             return;
         }
-        foreach (SuiteManager::$modules as $module) {
+        foreach ($this->modules as $module) {
             $module->_failed($e->getTest(), $e->getFail());
         }
     }
 
     public function beforeStep(StepEvent $e)
     {
-        foreach (SuiteManager::$modules as $module) {
+        foreach ($this->modules as $module) {
             $module->_beforeStep($e->getStep(), $e->getTest());
         }
     }
 
     public function afterStep(StepEvent $e)
     {
-        foreach (SuiteManager::$modules as $module) {
+        foreach ($this->modules as $module) {
             $module->_afterStep($e->getStep(), $e->getTest());
         }
     }
-
 }

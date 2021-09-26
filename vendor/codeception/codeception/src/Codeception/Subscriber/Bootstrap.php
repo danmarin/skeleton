@@ -1,17 +1,18 @@
 <?php
 namespace Codeception\Subscriber;
 
+use Codeception\Configuration;
 use Codeception\Event\SuiteEvent;
 use Codeception\Events;
-use Codeception\Exception\Configuration as ConfigurationException;
+use Codeception\Exception\ConfigurationException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class Bootstrap implements EventSubscriberInterface
 {
     use Shared\StaticEvents;
 
-    static $events = [
-        Events::SUITE_BEFORE => 'loadBootstrap',
+    public static $events = [
+        Events::SUITE_INIT => 'loadBootstrap',
     ];
 
     public function loadBootstrap(SuiteEvent $e)
@@ -22,11 +23,6 @@ class Bootstrap implements EventSubscriberInterface
             return;
         }
 
-        $bootstrap = $settings['path'] . $settings['bootstrap'];
-        if (!is_file($bootstrap)) {
-            throw new ConfigurationException("Bootstrap file $bootstrap can't be loaded");
-        }
-
-        require_once $bootstrap;
+        Configuration::loadBootstrap($settings['bootstrap'], $settings['path']);
     }
 }

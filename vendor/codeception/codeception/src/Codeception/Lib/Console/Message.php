@@ -1,5 +1,4 @@
 <?php
-
 namespace Codeception\Lib\Console;
 
 use Symfony\Component\Console\Output\OutputInterface;
@@ -12,30 +11,35 @@ class Message
     public function __construct($message, Output $output = null)
     {
         $this->message = $message;
-        $this->output  = $output;
+        $this->output = $output;
     }
 
     public function with($param)
     {
-        $args          = array_merge(array($this->message), func_get_args());
+        $args = array_merge([$this->message], func_get_args());
         $this->message = call_user_func_array('sprintf', $args);
-
         return $this;
     }
 
     public function style($name)
     {
         $this->message = sprintf('<%s>%s</%s>', $name, $this->message, $name);
-
         return $this;
     }
 
     public function width($length, $char = ' ')
     {
-        $message_length = strlen(strip_tags($this->message));
+        $message_length = $this->getLength();
+
         if ($message_length < $length) {
             $this->message .= str_repeat($char, $length - $message_length);
         }
+        return $this;
+    }
+
+    public function cut($length)
+    {
+        $this->message = mb_substr($this->message, 0, $length, 'utf-8');
         return $this;
     }
 
@@ -101,12 +105,14 @@ class Message
         return $this;
     }
 
-    public function getLength()
+    public function getLength($includeTags = false)
     {
-        if (function_exists('mb_strlen')) {
-            return mb_strlen($this->message);
-        }
-        return strlen($this->message);
+        return mb_strwidth($includeTags ? $this->message : strip_tags($this->message), 'utf-8');
+    }
+
+    public static function ucfirst($text)
+    {
+        return mb_strtoupper(mb_substr($text, 0, 1, 'utf-8'), 'utf-8') . mb_substr($text, 1, null, 'utf-8');
     }
 
     public function __toString()

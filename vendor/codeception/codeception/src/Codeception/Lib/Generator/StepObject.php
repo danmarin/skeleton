@@ -1,26 +1,32 @@
 <?php
 namespace Codeception\Lib\Generator;
 
+use Codeception\Exception\ConfigurationException;
+use Codeception\Util\Shared\Namespaces;
 use Codeception\Util\Template;
 
-class StepObject {
-    use Shared\Namespaces;
+class StepObject
+{
+    use Namespaces;
     use Shared\Classname;
 
     protected $template = <<<EOF
 <?php
-{{namespace}}
-class {{name}}Steps extends {{actorClass}}
+namespace {{namespace}};
+
+class {{name}} extends {{actorClass}}
 {
 {{actions}}
 }
 EOF;
 
     protected $actionTemplate = <<<EOF
+
     public function {{action}}()
     {
         \$I = \$this;
     }
+
 EOF;
 
     protected $settings;
@@ -30,19 +36,23 @@ EOF;
     public function __construct($settings, $name)
     {
         $this->settings = $settings;
-        $this->name = $this->removeSuffix($name, 'Steps');
+        $this->name = $this->getShortClassName($name);
+        $this->namespace = $this->getNamespaceString($this->settings['namespace'] . '\\Step\\' . $name);
     }
 
     public function produce()
     {
-        $actor = $this->settings['class_name'];        
-        $ns = $this->getNamespaceString($this->settings['namespace'].'\\'.$actor.'\\'.$this->name);
+        $actor = $this->settings['actor'];
+        if (!$actor) {
+            throw new ConfigurationException("Steps can't be created for suite without an actor");
+        }
+        $ns = $this->getNamespaceString($this->settings['namespace'] . '\\' . $actor . '\\' . $this->name);
         $ns = ltrim($ns, '\\');
 
-        $extended = '\\'.ltrim('\\'.$this->settings['namespace'].'\\'.$actor, '\\');
+        $extended = '\\' . ltrim('\\' . $this->settings['namespace'] . '\\' . $actor, '\\');
 
         return (new Template($this->template))
-            ->place('namespace', $ns)
+            ->place('namespace', $this->namespace)
             ->place('name', $this->name)
             ->place('actorClass', $extended)
             ->place('actions', $this->actions)
@@ -55,5 +65,4 @@ EOF;
             ->place('action', $action)
             ->produce();
     }
-
 }

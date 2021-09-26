@@ -1,17 +1,17 @@
 <?php
-
 namespace Codeception\Command;
 
-use Codeception\Actor;
 use Codeception\Codecept;
-use Codeception\Events;
 use Codeception\Configuration;
+use Codeception\Event\DispatcherWrapper;
 use Codeception\Event\SuiteEvent;
 use Codeception\Event\TestEvent;
+use Codeception\Events;
+use Codeception\Exception\ConfigurationException;
 use Codeception\Lib\Console\Output;
 use Codeception\Scenario;
 use Codeception\SuiteManager;
-use Codeception\TestCase\Cept;
+use Codeception\Test\Cept;
 use Codeception\Util\Debug;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\QuestionHelper;
@@ -28,20 +28,20 @@ use Symfony\Component\Console\Question\Question;
  */
 class Console extends Command
 {
+    use DispatcherWrapper;
+
     protected $test;
     protected $codecept;
     protected $suite;
     protected $output;
+    protected $actions = [];
 
     protected function configure()
     {
-        $this->setDefinition(
-             array(
-                 new InputArgument('suite', InputArgument::REQUIRED, 'suite to be executed'),
-                 new InputOption('config', 'c', InputOption::VALUE_OPTIONAL, 'Use custom path for config'),
-                 new InputOption('colors', '', InputOption::VALUE_NONE, 'Use colors in output'),
-             )
-        );
+        $this->setDefinition([
+            new InputArgument('suite', InputArgument::REQUIRED, 'suite to be executed'),
+            new InputOption('colors', '', InputOption::VALUE_NONE, 'Use colors in output'),
+        ]);
 
         parent::configure();
     }
@@ -53,13 +53,13 @@ class Console extends Command
 
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        $suiteName    = $input->getArgument('suite');
+        $suiteName = $input->getArgument('suite');
         $this->output = $output;
 
-        $config   = Configuration::config($input->getOption('config'));
+        $config = Configuration::config();
         $settings = Configuration::suiteSettings($suiteName, $config);
 
-        $options          = $input->getOptions();
+        $options = $input->getOptions();
         $options['debug'] = true;
         $options['silent'] = true;
         $options['interactive'] = false;
@@ -68,85 +68,59 @@ class Console extends Command
         Debug::setOutput(new Output($options));
 
         $this->codecept = new Codecept($options);
-        $dispatcher     = $this->codecept->getDispatcher();
+        $dispatcher = $this->codecept->getDispatcher();
 
-        $this->test     = (new Cept())
-            ->configDispatcher($dispatcher)
-            ->configName('')
-            ->config('file','')
-            ->initConfig();
-
-        $suiteManager   = new SuiteManager($dispatcher, $suiteName, $settings);
+        $suiteManager = new SuiteManager($dispatcher, $suiteName, $settings);
         $suiteManager->initialize();
-        $this->suite    = $suiteManager->getSuite();
+        $this->suite = $suiteManager->getSuite();
+        $moduleContainer = $suiteManager->getModuleContainer();
+
+        $this->actions = array_keys($moduleContainer->getActions());
+
+        $this->test = new Cept(null, null);
+        $this->test->getMetadata()->setServices([
+           'dispatcher' => $dispatcher,
+           'modules' =>  $moduleContainer
+        ]);
 
         $scenario = new Scenario($this->test);
-        $actor      = $settings['class_name'];
-        $I        = new $actor($scenario);
+        if (!$settings['actor']) {
+            throw new ConfigurationException("Interactive shell can't be started without an actor");
+        }
+        if (isset($config["namespace"])) {
+            $settings['actor'] = $config["namespace"] .'\\' . $settings['actor'];
+        }
+        $actor = $settings['actor'];
+        $I = new $actor($scenario);
 
         $this->listenToSignals();
 
         $output->writeln("<info>Interactive console started for suite $suiteName</info>");
         $output->writeln("<info>Try Codeception commands without writing a test</info>");
-        $output->writeln("<info>type 'exit' to leave console</info>");
-        $output->writeln("<info>type 'actions' to see all available actions for this suite</info>");
 
         $suiteEvent = new SuiteEvent($this->suite, $this->codecept->getResult(), $settings);
-        $dispatcher->dispatch(Events::SUITE_BEFORE, $suiteEvent);
+        $this->dispatch($dispatcher, Events::SUITE_BEFORE, $suiteEvent);
 
-        $dispatcher->dispatch(Events::TEST_PARSED, new TestEvent($this->test));
-        $dispatcher->dispatch(Events::TEST_BEFORE, new TestEvent($this->test));
+        $this->dispatch($dispatcher, Events::TEST_PARSED, new TestEvent($this->test));
+        $this->dispatch($dispatcher, Events::TEST_BEFORE, new TestEvent($this->test));
 
-        $output->writeln("\n\n<comment>\$I</comment> = new {$settings['class_name']}(\$scenario);");
-        $scenario->run();
-        $this->executeCommands($input, $output, $I, $settings['bootstrap']);
-
-        $dispatcher->dispatch(Events::TEST_AFTER, new TestEvent($this->test));
-        $dispatcher->dispatch(Events::SUITE_AFTER, new SuiteEvent($this->suite));
-
-        $output->writeln("<info>Bye-bye!</info>");
-    }
-
-    protected function executeCommands(InputInterface $input, OutputInterface $output, $I, $bootstrap)
-    {
-        $dialog = new QuestionHelper();
-
-        if (file_exists($bootstrap)) {
-            require $bootstrap;
+        if (file_exists($settings['bootstrap'])) {
+            require $settings['bootstrap'];
         }
 
-        do {
-            $question = new Question("<comment>\$I-></comment>");
-            $question->setAutocompleterValues(array_keys(SuiteManager::$actions));
+        $I->pause();
 
-            $command = $dialog->ask($input, $output, $question);
-            if ($command == 'actions') {
-                $output->writeln("<info>" . implode(' ', array_keys(SuiteManager::$actions)));
-                continue;
-            };
-            if ($command == 'exit') {
-                return;
-            }
-            if ($command == '') {
-                continue;
-            }
-            try {
-                $value = eval("return \$I->$command;");
-                if ($value and !is_object($value)) {
-                    codecept_debug($value);
-                }
-            } catch (\PHPUnit_Framework_AssertionFailedError $fail) {
-                $output->writeln("<error>fail</error> " . $fail->getMessage());
-            } catch (\Exception $e) {
-                $output->writeln("<error>error</error> " . $e->getMessage());
-            }
-        } while (true);
+        $this->dispatch($dispatcher, Events::TEST_AFTER, new TestEvent($this->test));
+        $this->dispatch($dispatcher, Events::SUITE_AFTER, new SuiteEvent($this->suite));
+
+        $output->writeln("<info>Bye-bye!</info>");
+        return 0;
     }
 
     protected function listenToSignals()
     {
         if (function_exists('pcntl_signal')) {
-            declare(ticks = 1);
+            declare (ticks = 1);
             pcntl_signal(SIGINT, SIG_IGN);
             pcntl_signal(SIGTERM, SIG_IGN);
         }

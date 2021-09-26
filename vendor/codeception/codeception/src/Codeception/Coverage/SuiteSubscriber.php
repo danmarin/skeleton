@@ -3,36 +3,42 @@ namespace Codeception\Coverage;
 
 use Codeception\Configuration;
 use Codeception\Coverage\Subscriber\Printer;
-use Codeception\Coverage\DummyCodeCoverage;
-use Codeception\Subscriber\Shared\StaticEvents;
 use Codeception\Lib\Interfaces\Remote;
+use Codeception\Stub;
+use Codeception\Subscriber\Shared\StaticEvents;
+use PHPUnit\Framework\CodeCoverageException;
+use SebastianBergmann\CodeCoverage\CodeCoverage;
+use SebastianBergmann\CodeCoverage\Filter as CodeCoverageFilter;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-abstract class SuiteSubscriber implements EventSubscriberInterface {
-
+abstract class SuiteSubscriber implements EventSubscriberInterface
+{
     use StaticEvents;
 
     protected $defaultSettings = [
-        'enabled' => false,
-        'remote' => false,
-        'local' => false,
+        'enabled'        => false,
+        'remote'         => false,
+        'local'          => false,
         'xdebug_session' => 'codeception',
         'remote_config'  => null,
         'show_uncovered' => false,
-        'c3_url' => null
+        'c3_url'         => null,
+        'work_dir'       => null,
+        'cookie_domain'  => null,
     ];
 
     protected $settings = [];
     protected $filters = [];
+    protected $modules = [];
 
     protected $coverage;
     protected $logDir;
     protected $options;
-    static $events = [];
+    public static $events = [];
 
     abstract protected function isEnabled();
 
-    function __construct($options = [])
+    public function __construct($options = [])
     {
         $this->options = $options;
         $this->logDir = Configuration::outputDir();
@@ -40,10 +46,13 @@ abstract class SuiteSubscriber implements EventSubscriberInterface {
 
     protected function applySettings($settings)
     {
-        if (!function_exists('xdebug_is_enabled')) {
-            throw new \Exception('XDebug is required to collect CodeCoverage. Please install xdebug extension and enable it in php.ini');
+        try {
+            $this->coverage = PhpCodeCoverageFactory::build();
+        } catch (CodeCoverageException $e) {
+            throw new \Exception(
+                'XDebug is required to collect CodeCoverage. Please install xdebug extension and enable it in php.ini'
+            );
         }
-        $this->coverage = new \PHP_CodeCoverage();
 
         $this->filters = $settings;
         $this->settings = $this->defaultSettings;
@@ -53,15 +62,26 @@ abstract class SuiteSubscriber implements EventSubscriberInterface {
                 $this->settings[$key] = $settings['coverage'][$key];
             }
         }
-        $this->coverage->setProcessUncoveredFilesFromWhitelist($this->settings['show_uncovered']);
+        if (method_exists($this->coverage, 'setProcessUncoveredFilesFromWhitelist')) {
+            //php-code-coverage 8 or older
+            $this->coverage->setProcessUncoveredFilesFromWhitelist($this->settings['show_uncovered']);
+        } else {
+            //php-code-coverage 9+
+            if ($this->settings['show_uncovered']) {
+                $this->coverage->processUncoveredFiles();
+            } else {
+                $this->coverage->doNotProcessUncoveredFiles();
+            }
+        }
     }
 
     /**
+     * @param array $modules
      * @return \Codeception\Lib\Interfaces\Remote|null
      */
-    protected function getServerConnectionModule()
+    protected function getServerConnectionModule(array $modules)
     {
-        foreach (\Codeception\SuiteManager::$modules as $module) {
+        foreach ($modules as $module) {
             if ($module instanceof Remote) {
                 return $module;
             }
@@ -69,9 +89,10 @@ abstract class SuiteSubscriber implements EventSubscriberInterface {
         return null;
     }
 
-    public function applyFilter(\PHPUnit_Framework_TestResult $result)
+    public function applyFilter(\PHPUnit\Framework\TestResult $result)
     {
-        $result->setCodeCoverage(new DummyCodeCoverage());
+        $driver = Stub::makeEmpty('SebastianBergmann\CodeCoverage\Driver\Driver');
+        $result->setCodeCoverage(new CodeCoverage($driver, new CodeCoverageFilter()));
 
         Filter::setup($this->coverage)
             ->whiteList($this->filters)
@@ -84,5 +105,4 @@ abstract class SuiteSubscriber implements EventSubscriberInterface {
     {
         Printer::$coverage->merge($coverage);
     }
-
 }

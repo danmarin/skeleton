@@ -9,7 +9,7 @@ class FailFast implements EventSubscriberInterface
 {
     use Shared\StaticEvents;
 
-    static $events = [
+    public static $events = [
         Events::SUITE_BEFORE => 'stopOnFail',
     ];
 
@@ -18,5 +18,4 @@ class FailFast implements EventSubscriberInterface
         $e->getResult()->stopOnError(true);
         $e->getResult()->stopOnFailure(true);
     }
-
-} 
+}

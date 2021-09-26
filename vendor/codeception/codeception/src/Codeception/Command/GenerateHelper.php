@@ -1,17 +1,18 @@
 <?php
 namespace Codeception\Command;
 
+use Codeception\Configuration;
 use Codeception\Lib\Generator\Helper;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Command\Command;
 
 /**
  * Creates empty Helper class.
  *
  * * `codecept g:helper MyHelper`
+ * * `codecept g:helper "My\Helper"`
  *
  */
 class GenerateHelper extends Command
@@ -21,12 +22,9 @@ class GenerateHelper extends Command
 
     protected function configure()
     {
-        $this->setDefinition(
-            array(
-                new InputArgument('name', InputArgument::REQUIRED, 'suite to be generated'),
-                new InputOption('config', 'c', InputOption::VALUE_OPTIONAL, 'Use custom path for config'),
-            )
-        );
+        $this->setDefinition([
+            new InputArgument('name', InputArgument::REQUIRED, 'helper name'),
+        ]);
     }
 
     public function getDescription()
@@ -37,16 +35,18 @@ class GenerateHelper extends Command
     public function execute(InputInterface $input, OutputInterface $output)
     {
         $name = ucfirst($input->getArgument('name'));
-        $config = \Codeception\Configuration::config($input->getOption('config'));
-        $file = \Codeception\Configuration::helpersDir() . "{$name}Helper.php";
+        $config = $this->getGlobalConfig();
 
-        $res = $this->save($file, (new Helper($name, $config['namespace']))->produce());
+        $path = $this->createDirectoryFor(Configuration::supportDir() . 'Helper', $name);
+        $filename = $path . $this->getShortClassName($name) . '.php';
+
+        $res = $this->createFile($filename, (new Helper($name, $config['namespace']))->produce());
         if ($res) {
-            $output->writeln("<info>Helper $file created</info>");
+            $output->writeln("<info>Helper $filename created</info>");
+            return 0;
         } else {
-            $output->writeln("<error>Error creating helper $file</error>");
+            $output->writeln("<error>Error creating helper $filename</error>");
+            return 1;
         }
     }
-
-
 }

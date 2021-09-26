@@ -2,11 +2,11 @@
 namespace Codeception\Lib;
 
 use Codeception\Configuration;
-use Codeception\Exception\Configuration as ConfigurationException;
-use Codeception\TestCase\Interfaces\Descriptive;
-use Codeception\TestCase\Interfaces\Reported;
-use Codeception\TestCase\Interfaces\ScenarioDriven;
-use Codeception\TestCase\Interfaces\Plain;
+use Codeception\Exception\ConfigurationException;
+use Codeception\Test\Interfaces\Reported;
+use Codeception\Test\Descriptor;
+use Codeception\TestInterface;
+use Codeception\Test\Gherkin;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
 
@@ -44,14 +44,13 @@ class GroupManager
             }
             $files = Finder::create()->files()
                 ->name(basename($pattern))
-                ->path(dirname($pattern))
                 ->sortByName()
-                ->in(Configuration::projectDir());
+                ->in(Configuration::projectDir().dirname($pattern));
 
             $i = 1;
             foreach ($files as $file) {
-                /** @var SplFileInfo $file  **/
-                $this->configuredGroups[str_replace('*', $i, $group)] = $file->getRelativePathname();
+                /** @var SplFileInfo $file * */
+                $this->configuredGroups[str_replace('*', $i, $group)] = dirname($pattern).DIRECTORY_SEPARATOR.$file->getRelativePathname();
                 $i++;
             }
             unset($this->configuredGroups[$group]);
@@ -65,39 +64,90 @@ class GroupManager
             if (is_array($tests)) {
                 foreach ($tests as $test) {
                     $file = str_replace(['/', '\\'], [DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR], $test);
-                    $this->testsInGroups[$group][] = Configuration::projectDir().$file;
+                    $this->testsInGroups[$group][] = $this->normalizeFilePath($file, $group);
                 }
-            } elseif (is_file(Configuration::projectDir().$tests)) {
-                $handle = @fopen(Configuration::projectDir().$tests, "r");
+            } elseif (is_file(Configuration::projectDir() . $tests)) {
+                $handle = @fopen(Configuration::projectDir() . $tests, "r");
                 if ($handle) {
                     while (($test = fgets($handle, 4096)) !== false) {
-                        $file = trim(Configuration::projectDir().$test);
-                        $file = str_replace(['/', '\\'], [DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR], $file);
-                        $this->testsInGroups[$group][] = $file;
+                        // if the current line is blank then we need to move to the next line
+                        // otherwise the current codeception directory becomes part of the group
+                        // which causes every single test to run
+                        if (trim($test) === '') {
+                            continue;
+                        }
+
+                        $file = str_replace(['/', '\\'], [DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR], trim($test));
+                        $this->testsInGroups[$group][] = $this->normalizeFilePath($file, $group);
                     }
                     fclose($handle);
                 }
-            } else {
-                codecept_debug("Group '$group' is empty, no tests are loaded");
             }
         }
     }
 
-    public function groupsForTest(\PHPUnit_Framework_Test $test)
+    /**
+     * @param string $file
+     * @param string $group
+     * @return false|string
+     * @throws ConfigurationException
+     */
+    private function normalizeFilePath($file, $group)
+    {
+        $pathParts = explode(':', $file);
+        if (codecept_is_path_absolute($file)) {
+            if ($file[0] === '/' && count($pathParts) > 1) {
+                //take segment before first :
+                $this->checkIfFileExists($pathParts[0], $group);
+                return sprintf('%s:%s', realpath($pathParts[0]), $pathParts[1]);
+            } else if (count($pathParts) > 2) {
+                //on Windows take segment before second :
+                $fullPath = $pathParts[0] . ':' . $pathParts[1];
+                $this->checkIfFileExists($fullPath, $group);
+                return sprintf('%s:%s', realpath($fullPath), $pathParts[2]);
+            }
+
+            $this->checkIfFileExists($file, $group);
+            return realpath($file);
+        } elseif (strpos($file, ':') === false) {
+            $dirtyPath = Configuration::projectDir() . $file;
+            $this->checkIfFileExists($dirtyPath, $group);
+            return realpath($dirtyPath);
+        }
+
+        $dirtyPath = Configuration::projectDir() . $pathParts[0];
+        $this->checkIfFileExists($dirtyPath, $group);
+        return sprintf('%s:%s', realpath($dirtyPath), $pathParts[1]);
+    }
+
+    /**
+     * @param string $path
+     * @param string $group
+     * @throws ConfigurationException
+     */
+    private function checkIfFileExists($path, $group)
+    {
+        if (!file_exists($path)) {
+            throw new ConfigurationException('GroupManager: File or directory ' . $path . ' set in ' . $group. ' group does not exist');
+        }
+    }
+
+    public function groupsForTest(\PHPUnit\Framework\Test $test)
     {
         $groups = [];
-        if ($test instanceof ScenarioDriven) {
-            $groups = $test->getScenario()->getGroups();
+        $filename = Descriptor::getTestFileName($test);
+        if ($test instanceof TestInterface) {
+            $groups = $test->getMetadata()->getGroups();
         }
         if ($test instanceof Reported) {
             $info = $test->getReportFields();
             if (isset($info['class'])) {
-                $groups = array_merge($groups, \PHPUnit_Util_Test::getGroups($info['class'], $info['name']));
+                $groups = array_merge($groups, \PHPUnit\Util\Test::getGroups($info['class'], $info['name']));
             }
-            $filename = $info['file'];
-        } else {
-            $groups = array_merge($groups, \PHPUnit_Util_Test::getGroups(get_class($test), $test->getName(false)));
-            $filename = (new \ReflectionClass($test))->getFileName();
+            $filename = str_replace(['\\\\', '//', '/./'], ['\\', '/', '/'], $info['file']);
+        }
+        if ($test instanceof \PHPUnit\Framework\TestCase) {
+            $groups = array_merge($groups, \PHPUnit\Util\Test::getGroups(get_class($test), $test->getName(false)));
         }
 
         foreach ($this->testsInGroups as $group => $tests) {
@@ -105,8 +155,11 @@ class GroupManager
                 if ($filename == $testPattern) {
                     $groups[] = $group;
                 }
-
                 if (strpos($filename . ':' . $test->getName(false), $testPattern) === 0) {
+                    $groups[] = $group;
+                }
+                if ($test instanceof Gherkin
+                    && mb_strtolower($filename . ':' . $test->getMetadata()->getFeature()) === mb_strtolower($testPattern)) {
                     $groups[] = $group;
                 }
             }
