@@ -10,8 +10,8 @@
     ],
     "minimum-stability": "stable",
     "require": {
-        "symfony/console": "~2.6",
-        "symfony/process": "~2.6",
+        "symfony/console": "^3.4",
+        "symfony/process": "~5.4",
         "codeception/codeception": "*",
         "fzaninotto/faker": "~1.4"
     },

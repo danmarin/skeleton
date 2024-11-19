@@ -3,5 +3,5 @@ app/sessions/
 app/cache/
 .idea/
 node_modules/
-
+vendor
 *.log
